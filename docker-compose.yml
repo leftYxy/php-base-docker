@@ -1,6 +1,6 @@
 # 网络组
 networks:
-  yaoxy_network:
+  php_network:
     external: true
     driver: bridge
     ipam:
@@ -33,7 +33,7 @@ services:
     ports:
       - "${MYSQL_PORT}:3306"
     networks:
-      yaoxy_network:
+      php_network:
         ipv4_address: 172.100.1.06
 
 ### Redis ################################################
@@ -52,7 +52,7 @@ services:
           cpus: '0.25'
           memory: 1024M
     networks:
-      yaoxy_network:
+      php_network:
         ipv4_address: 172.100.1.13
 
 ### php7.0 ################################################        
@@ -79,7 +79,7 @@ services:
       - CHOKIDAR_USEPOLLING=true
       - TZ=Asia/Shanghai # 设置为上海时区
     networks:
-      yaoxy_network:
+      php_network:
         ipv4_address: 172.100.1.70
 
 ### php7.2 ################################################
@@ -105,7 +105,7 @@ services:
       - CHOKIDAR_USEPOLLING=true
       - TZ=Asia/Shanghai # 设置为上海时区
     networks:
-      yaoxy_network:
+      php_network:
         ipv4_address: 172.100.1.72
 
   ### php8.1 ################################################
@@ -131,7 +131,7 @@ services:
       - CHOKIDAR_USEPOLLING=true
       - TZ=Asia/Shanghai # 设置为上海时区
     networks:
-      yaoxy_network:
+      php_network:
         ipv4_address: 172.100.1.81
 ##### nginx ################
   nginx:
@@ -165,7 +165,7 @@ services:
           cpus: '0.25'
           memory: 1024M
     networks:
-      - yaoxy_network
+      - php_network
 
   ### laravel ################################################
 #  laravel:
@@ -190,5 +190,5 @@ services:
 #      - CHOKIDAR_USEPOLLING=true
 #      - TZ=Asia/Shanghai # 设置为上海时区
 #    networks:
-#      yaoxy_network:
+#      php_network:
 #        ipv4_address: 172.100.9.99
