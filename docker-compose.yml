@@ -1,0 +1,194 @@
+# 网络组
+networks:
+  yaoxy_network:
+    external: true
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.100.0.0/16
+          gateway: 172.100.1.1
+  frontend:
+    driver: bridge
+  backend:
+    driver: bridge
+
+# 服务
+services:
+
+### MySQL ################################################
+  mysql:
+    build:
+      context: ./mysql
+      args:
+        - MYSQL_VERSION=${MYSQL_VERSION}
+    environment:
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - TZ=${WORKSPACE_TIMEZONE}
+    volumes:
+      - ${DATA_PATH_HOST}/mysql:/var/lib/mysql
+      - ${MYSQL_ENTRYPOINT_INITDB}:/docker-entrypoint-initdb.d
+    ports:
+      - "${MYSQL_PORT}:3306"
+    networks:
+      yaoxy_network:
+        ipv4_address: 172.100.1.06
+
+### Redis ################################################
+  redis:
+    build: ./redis
+    volumes:
+      - ${DATA_PATH_HOST}/redis/yaoxy:/data
+    ports:
+      - "${REDIS_PORT}:6379"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 1024M
+        reservations:
+          cpus: '0.25'
+          memory: 1024M
+    networks:
+      yaoxy_network:
+        ipv4_address: 172.100.1.13
+
+### php7.0 ################################################        
+  php70:
+    build:
+      context: ./php70
+    # image: php70:latest
+    volumes:
+      - ../codes/php70:/var/www/php70
+    ports:
+      - "9080:80"
+    tty: true
+    deploy:
+      resources:
+        limits:
+          cpus: '8.0'
+          memory: 4096M
+        reservations:
+          cpus: '6.0'
+          memory: 4096M
+    environment:
+      - DOCKER_TLS_VERIFY=1
+      - DOCKER_TLS_CERTDIR=/certs
+      - CHOKIDAR_USEPOLLING=true
+      - TZ=Asia/Shanghai # 设置为上海时区
+    networks:
+      yaoxy_network:
+        ipv4_address: 172.100.1.70
+
+### php7.2 ################################################
+  php72:
+    build:
+      context: ./php72
+    volumes:
+      - ../codes:/var/www
+    ports:
+      - "9072:80"
+    tty: true
+    deploy:
+      resources:
+        limits:
+          cpus: '8.0'
+          memory: 4096M
+        reservations:
+          cpus: '6.0'
+          memory: 4096M
+    environment:
+      - DOCKER_TLS_VERIFY=1
+      - DOCKER_TLS_CERTDIR=/certs
+      - CHOKIDAR_USEPOLLING=true
+      - TZ=Asia/Shanghai # 设置为上海时区
+    networks:
+      yaoxy_network:
+        ipv4_address: 172.100.1.72
+
+  ### php8.1 ################################################
+  php81:
+    build:
+      context: ./php81
+    volumes:
+      - ../codes/php81:/var/www/php81
+    ports:
+      - "9081:80"
+    tty: true
+    deploy:
+      resources:
+        limits:
+          cpus: '8.0'
+          memory: 4096M
+        reservations:
+          cpus: '6.0'
+          memory: 4096M
+    environment:
+      - DOCKER_TLS_VERIFY=1
+      - DOCKER_TLS_CERTDIR=/certs
+      - CHOKIDAR_USEPOLLING=true
+      - TZ=Asia/Shanghai # 设置为上海时区
+    networks:
+      yaoxy_network:
+        ipv4_address: 172.100.1.81
+##### nginx ################
+  nginx:
+    build:
+      context: ./nginx
+      args:
+        - CHANGE_SOURCE=${CHANGE_SOURCE}
+        - PHP_UPSTREAM_CONTAINER=${NGINX_PHP_UPSTREAM_CONTAINER}
+        - PHP_UPSTREAM_PORT=${NGINX_PHP_UPSTREAM_PORT}
+        - http_proxy
+        - https_proxy
+        - no_proxy
+    volumes:
+      - ${APP_CODE_PATH_HOST}:${APP_CODE_PATH_CONTAINER}${APP_CODE_CONTAINER_FLAG}
+      - ${NGINX_HOST_LOG_PATH}:/var/log/nginx
+      - ${NGINX_SITES_PATH}:/etc/nginx/sites-available
+      - ${NGINX_SSL_PATH}:/etc/nginx/ssl
+    ports:
+      - "8180:80"
+      - "8181:81"
+    depends_on:
+      - php70
+      - php72
+      - php81
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 1024M
+        reservations:
+          cpus: '0.25'
+          memory: 1024M
+    networks:
+      - yaoxy_network
+
+  ### laravel ################################################
+#  laravel:
+#    build:
+#      context: ./laravel
+#    volumes:
+#      - ../codes/laravel:/var/www
+#    ports:
+#      - "9999:8000"
+#    tty: true
+#    deploy:
+#      resources:
+#        limits:
+#          cpus: '8.0'
+#          memory: 4096M
+#        reservations:
+#          cpus: '6.0'
+#          memory: 4096M
+#    environment:
+#      - DOCKER_TLS_VERIFY=1
+#      - DOCKER_TLS_CERTDIR=/certs
+#      - CHOKIDAR_USEPOLLING=true
+#      - TZ=Asia/Shanghai # 设置为上海时区
+#    networks:
+#      yaoxy_network:
+#        ipv4_address: 172.100.9.99
